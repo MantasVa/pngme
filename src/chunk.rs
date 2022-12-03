@@ -11,7 +11,7 @@ pub struct Chunk {
 
 impl Chunk {
 
-    fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         return Chunk {
             chunk_type,
             data

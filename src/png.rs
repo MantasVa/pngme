@@ -55,11 +55,11 @@ impl Png {
 
 impl fmt::Display for Png {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.
-        write!(f, "{:?}", self.chunks);
+        let bytes = self.as_bytes();
+        let s = std::str::from_utf8(&bytes).map_err(|_| std::fmt::Error)?;
+        write!(f, "{}", s)
     }
-}    
-
+}
 
 #[cfg(test)]
 mod tests {
@@ -84,7 +84,7 @@ mod tests {
         Png::from_chunks(chunks)
     }
 
-    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
+    fn chunk_from_strings<'a>(chunk_type: &'a str, data: &'a str) -> Result<Chunk, &'a str> {
         use std::str::FromStr;
 
         let chunk_type = ChunkType::from_str(chunk_type)?;
