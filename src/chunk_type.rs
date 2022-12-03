@@ -3,17 +3,17 @@
     use std::str::FromStr;
     use std::fmt;
 
-    #[derive(PartialEq, Eq, Debug)]
+    #[derive(PartialEq, Eq, Debug, Clone)]
     pub struct ChunkType {
         bytes: [u8; 4]
     }
 
     impl ChunkType {
-        fn bytes(&self) -> [u8; 4] {
+        pub fn bytes(&self) -> [u8; 4] {
             return self.bytes;
         }
         
-        fn is_valid(&self) -> bool {
+        pub fn is_valid(&self) -> bool {
             let valid_chars = self
             .bytes
             .iter()
