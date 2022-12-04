@@ -2,6 +2,8 @@
     use std::convert::TryFrom;
     use std::str::FromStr;
     use std::fmt;
+    use std::fmt::Display;
+    use crate::{Error, Result};
 
     #[derive(PartialEq, Eq, Debug, Clone)]
     pub struct ChunkType {
@@ -39,9 +41,9 @@
     }
     
     impl TryFrom<[u8; 4]> for ChunkType {
-        type Error = &'static str;
+        type Error = Error;
 
-        fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
+        fn try_from(value: [u8; 4]) -> Result<Self> {
             let chunk_type = ChunkType {
                 bytes: value
             };
@@ -51,13 +53,13 @@
     }
 
     impl FromStr for ChunkType {
-        type Err = &'static str;
+        type Err = Error;
 
-        fn from_str(s: &str) -> Result<Self, Self::Err> {
+        fn from_str(s: &str) -> Result<Self> {
             let bytes = s.as_bytes();
 
             if bytes.len() != 4 {
-                return Err("String should have 4 bytes");
+                return Err(Box::from(ChunkTypeError::InputTooSmall));
             }
 
             let valid_chars = bytes
@@ -65,7 +67,7 @@
             .all(|&b| (b >= b'a' && b <= b'z' || (b >= b'A' && b <= b'Z')));
             
             if !valid_chars {
-                return Err("Chars are not valid")
+                return Err(Box::from(ChunkTypeError::InvalidCharacters))
             }
 
             let sized: [u8; 4] = [bytes[0], bytes[1], bytes[2], bytes[3]];
@@ -79,6 +81,25 @@
             write!(f, "{}", s)
         }
     }    
+
+    #[derive(Debug)]
+    pub enum ChunkTypeError {
+        InputTooSmall,
+        InvalidCharacters,
+    }
+    
+    impl std::error::Error for ChunkTypeError {}
+    
+    impl Display for ChunkTypeError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match *self {
+                ChunkTypeError::InputTooSmall => {
+                    write!(f, "At least 4 bytes must be supplied to construct a chunk type")
+                }
+                ChunkTypeError::InvalidCharacters => write!(f, "Invalid characters are used"),
+            }
+        }
+    }
 
 #[cfg(test)]
 mod tests {

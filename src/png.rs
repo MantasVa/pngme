@@ -1,8 +1,10 @@
 use std::str::FromStr;
 use std::fmt;
+use std::fmt::Display;
 
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
+use crate::{Error, Result};
 
 struct Png {
     chunks: Vec<Chunk>
@@ -21,14 +23,13 @@ impl Png {
         self.chunks.push(chunk);
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, &str> {
+    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
         let chunk_type = ChunkType::from_str(chunk_type)?;
 
-        if let Some(pos) = self.chunks.iter().position(|c| c.chunk_type() == &chunk_type) {
-            return Ok(self.chunks.remove(pos))
-        }
-
-        return Err("Chunk is not present");
+        let index = self.chunks.iter()
+                .position(|c| c.chunk_type() == &chunk_type)
+                .ok_or(PngError::UnknownChunkType)?;
+        return Ok(self.chunks.remove(index))
     }
 
     fn header(&self) -> &[u8; 8] {
@@ -49,15 +50,72 @@ impl Png {
     }
 
     fn as_bytes(&self) -> Vec<u8> {
-        return self.chunks.iter().flat_map(|c| c.as_bytes()).collect()
+        let header: Vec<u8> = self.header().iter().copied().collect();
+        let body: Vec<u8> = self
+            .chunks
+            .iter()
+            .flat_map(|c| c.as_bytes().into_iter())
+            .collect::<Vec<_>>();
+
+        header.into_iter().chain(body.into_iter()).collect()
+    }
+}
+
+impl TryFrom<&[u8]> for Png {
+    type Error = Error;
+
+    fn try_from(value: &[u8]) -> Result<Self> {
+        if value.len() < Png::STANDARD_HEADER.len() {
+            return Err(Box::from(PngError::TooSmall));
+        }
+
+        // TODO: there's got to be a nicer way than advancing a pointer and reslicing each time
+        let mut index = 0;
+
+        let header = &value[index..index + Png::STANDARD_HEADER.len()];
+        index = Png::STANDARD_HEADER.len();
+
+        if Png::STANDARD_HEADER != header {
+            return Err(Box::from(PngError::InvalidHeader));
+        }
+
+        // parse one chunk at a time
+        let mut chunks = Vec::new();
+
+        while index < value.len() {
+            let bytes = &value[index..];
+            let chunk = Chunk::try_from(bytes)?;
+            index += chunk.length() + Chunk::METADATA_BYTES;
+
+            chunks.push(chunk);
+        }
+
+        Ok(Png { chunks })
     }
 }
 
 impl fmt::Display for Png {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let bytes = self.as_bytes();
-        let s = std::str::from_utf8(&bytes).map_err(|_| std::fmt::Error)?;
-        write!(f, "{}", s)
+        write!(f, "{}", 44)
+    }
+}
+
+#[derive(Debug)]
+pub enum PngError {
+    InvalidHeader,
+    TooSmall,
+    UnknownChunkType,
+}
+
+impl std::error::Error for PngError {}
+
+impl Display for PngError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            PngError::InvalidHeader => write!(f, "Invalid header"),
+            PngError::TooSmall => write!(f, "The given source is too small to be a valid PNG file"),
+            PngError::UnknownChunkType => write!(f, "Unknown chunk type"),
+        }
     }
 }
 
@@ -66,7 +124,6 @@ mod tests {
     use super::*;
     use crate::chunk_type::ChunkType;
     use crate::chunk::Chunk;
-    use std::str::FromStr;
     use std::convert::TryFrom;
 
     fn testing_chunks() -> Vec<Chunk> {
@@ -84,8 +141,7 @@ mod tests {
         Png::from_chunks(chunks)
     }
 
-    fn chunk_from_strings<'a>(chunk_type: &'a str, data: &'a str) -> Result<Chunk, &'a str> {
-        use std::str::FromStr;
+    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
 
         let chunk_type = ChunkType::from_str(chunk_type)?;
         let data: Vec<u8> = data.bytes().collect();
