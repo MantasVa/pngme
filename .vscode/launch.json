@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'pngme'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=pngme",
+                    "--package=pngme"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": ["remove", 
+            "C:\\Users\\mvaluckas\\Pictures\\image-20220321-090948.png",
+        "RuSt"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'pngme'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=pngme",
+                    "--package=pngme"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

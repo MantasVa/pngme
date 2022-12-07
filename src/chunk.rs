@@ -4,6 +4,7 @@ use std::{fmt, fmt::Display};
 use crc::crc32;
 use crate::{Error, Result};
 
+#[derive(Debug, Clone)]
 pub struct Chunk {
     chunk_type: ChunkType,
     data: Vec<u8>,
@@ -110,7 +111,7 @@ impl TryFrom<&[u8]> for Chunk {
 impl fmt::Display for Chunk {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let data_str = std::str::from_utf8(&self.data).map_err(|_| std::fmt::Error)?;
-        write!(f, "{}{}", self.chunk_type.to_string(), data_str)
+        write!(f, "{} {}", self.chunk_type.to_string(), data_str)
     }
 }
 

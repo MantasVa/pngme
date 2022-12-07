@@ -6,24 +6,24 @@ use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
 use crate::{Error, Result};
 
-struct Png {
+pub struct Png {
     chunks: Vec<Chunk>
 }
 
 impl Png {
     const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Png {
        return Png {
         chunks
        };
     }
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk);
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
         let chunk_type = ChunkType::from_str(chunk_type)?;
 
         let index = self.chunks.iter()
@@ -40,7 +40,7 @@ impl Png {
         return &self.chunks;
     }
 
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         let chunk_type = match ChunkType::from_str(chunk_type) {
             Ok(c) => c,
             Err(_) => return None
@@ -49,7 +49,7 @@ impl Png {
         return self.chunks.iter().find(|c| c.chunk_type() == &chunk_type)
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let header: Vec<u8> = self.header().iter().copied().collect();
         let body: Vec<u8> = self
             .chunks
@@ -96,7 +96,7 @@ impl TryFrom<&[u8]> for Png {
 
 impl fmt::Display for Png {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", 44)
+        write!(f, "{:?} {:?}", self.header(), self.chunks())
     }
 }
 
