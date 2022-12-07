@@ -15,9 +15,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["remove", 
-            "C:\\Users\\mvaluckas\\Pictures\\image-20220321-090948.png",
-        "RuSt"],
+            "args": [],
             "cwd": "${workspaceFolder}"
         },
         {
